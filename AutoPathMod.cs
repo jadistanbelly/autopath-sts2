@@ -12,5 +12,6 @@ public static class AutoPathMod
     {
         Harmony = new Harmony("com.jadistanbelly.autopath");
         Harmony.PatchAll(typeof(AutoPathMod).Assembly);
+        AutoPathConfig.TryRegisterWithModConfig();
     }
 }

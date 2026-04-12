@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using Godot;
 using HarmonyLib;
 using MegaCrit.Sts2.Core.Map;
@@ -10,6 +12,7 @@ namespace AutoPath.Patches;
 public static class MapScreenPatch
 {
     private static NMapScreen? _pendingScreen;
+    private static readonly Random Rng = new();
 
     [HarmonyPostfix]
     public static void Postfix(NMapScreen __instance)
@@ -24,7 +27,13 @@ public static class MapScreenPatch
         if (runManager != null && !runManager.IsSinglePlayerOrFakeMultiplayer)
             return;
 
-        if (CountTravelable(__instance, out _) != 1)
+        var travelable = CollectTravelable(__instance);
+        if (travelable.Count == 0)
+            return;
+
+        // Normal mode: only auto-advance when exactly one choice
+        // YOLO mode: auto-advance regardless, picking randomly
+        if (travelable.Count > 1 && !AutoPathConfig.YoloMode)
             return;
 
         _pendingScreen = __instance;
@@ -47,9 +56,16 @@ public static class MapScreenPatch
             if (__instance.IsTraveling || !__instance.IsTravelEnabled)
                 return;
 
-            // Re-scan: must still be exactly one travelable
-            if (CountTravelable(__instance, out var target) != 1 || target == null)
+            var fresh = CollectTravelable(__instance);
+            if (fresh.Count == 0)
                 return;
+            if (fresh.Count > 1 && !AutoPathConfig.YoloMode)
+                return;
+
+            var target = fresh.Count == 1
+                ? fresh[0]
+                : fresh[Rng.Next(fresh.Count)];
+
             if (!GodotObject.IsInstanceValid(target))
                 return;
 
@@ -57,34 +73,26 @@ public static class MapScreenPatch
         };
     }
 
-    private static int CountTravelable(NMapScreen screen, out NMapPoint? single)
+    private static List<NMapPoint> CollectTravelable(NMapScreen screen)
     {
-        single = null;
+        var results = new List<NMapPoint>();
         var pointsControl = Traverse.Create(screen).Field("_points").GetValue<Control>();
-        if (pointsControl == null)
-            return 0;
-
-        int count = 0;
-        CollectTravelable(pointsControl, ref count, ref single);
-        return count;
+        if (pointsControl != null)
+            CollectTravelableRecursive(pointsControl, results);
+        return results;
     }
 
-    private static void CollectTravelable(Node parent, ref int count, ref NMapPoint? single)
+    private static void CollectTravelableRecursive(Node parent, List<NMapPoint> results)
     {
         foreach (var child in parent.GetChildren())
         {
             if (child is NMapPoint mapPoint && mapPoint.State == MapPointState.Travelable)
             {
-                count++;
-                single = mapPoint;
-                if (count > 1)
-                    return;
+                results.Add(mapPoint);
             }
             else if (child.GetChildCount() > 0)
             {
-                CollectTravelable(child, ref count, ref single);
-                if (count > 1)
-                    return;
+                CollectTravelableRecursive(child, results);
             }
         }
     }

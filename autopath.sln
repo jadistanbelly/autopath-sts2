@@ -1,0 +1,24 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.5.2.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AutoPath", "AutoPath.csproj", "{05B771BF-7D2B-DBFE-F0A3-010DF7CFB42D}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{05B771BF-7D2B-DBFE-F0A3-010DF7CFB42D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{05B771BF-7D2B-DBFE-F0A3-010DF7CFB42D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{05B771BF-7D2B-DBFE-F0A3-010DF7CFB42D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{05B771BF-7D2B-DBFE-F0A3-010DF7CFB42D}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {2BF3EA16-9869-479E-AA9D-80F3670C8043}
+	EndGlobalSection
+EndGlobal
