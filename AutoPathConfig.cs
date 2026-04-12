@@ -47,7 +47,7 @@ public static class AutoPathConfig
             // Delay slider entry
             var delayEntry = Activator.CreateInstance(configEntryType)!;
             SetProp(delayEntry, "Key", DelayKey);
-            SetProp(delayEntry, "Label", "Selection Delay");
+            SetProp(delayEntry, "Label", "Selection Delay (sec)");
             SetProp(delayEntry, "Description", "Seconds to wait before auto-advancing (0.5 – 10)");
             SetProp(delayEntry, "Type", Enum.Parse(configTypeEnum, "Slider"));
             SetProp(delayEntry, "DefaultValue", (double)DefaultDelay);
