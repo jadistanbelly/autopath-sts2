@@ -9,69 +9,83 @@ namespace AutoPath.Patches;
 [HarmonyPatch(typeof(NMapScreen), "RecalculateTravelability")]
 public static class MapScreenPatch
 {
-    private static bool _autoTravelPending;
+    private static NMapScreen? _pendingScreen;
 
     [HarmonyPostfix]
     public static void Postfix(NMapScreen __instance)
     {
-        if (_autoTravelPending)
+        if (_pendingScreen == __instance)
             return;
 
         if (__instance.IsTraveling || !__instance.IsTravelEnabled)
             return;
 
-        // Skip auto-travel in multiplayer to avoid conflicts with vote system
         var runManager = RunManager.Instance;
         if (runManager != null && !runManager.IsSinglePlayerOrFakeMultiplayer)
             return;
 
-        // Find the _points container and count travelable map points
-        var pointsField = Traverse.Create(__instance).Field("_points");
-        var pointsControl = pointsField.GetValue<Control>();
-        if (pointsControl == null)
+        if (CountTravelable(__instance, out _) != 1)
             return;
 
-        NMapPoint? singleTravelable = null;
-        int travelableCount = 0;
-
-        foreach (var child in pointsControl.GetChildren())
-        {
-            if (child is NMapPoint mapPoint && mapPoint.State == MapPointState.Travelable)
-            {
-                travelableCount++;
-                singleTravelable = mapPoint;
-                if (travelableCount > 1)
-                    break;
-            }
-        }
-
-        if (travelableCount != 1 || singleTravelable == null)
-            return;
-
-        _autoTravelPending = true;
-        var target = singleTravelable;
+        _pendingScreen = __instance;
 
         var tree = __instance.GetTree();
         if (tree == null)
         {
-            _autoTravelPending = false;
+            _pendingScreen = null;
             return;
         }
 
         tree.CreateTimer(0.5).Timeout += () =>
         {
-            _autoTravelPending = false;
+            _pendingScreen = null;
 
+            if (!GodotObject.IsInstanceValid(__instance))
+                return;
             if (!__instance.IsInsideTree() || !__instance.IsOpen)
                 return;
             if (__instance.IsTraveling || !__instance.IsTravelEnabled)
                 return;
 
-            // Verify the target is still travelable
-            if (target.State != MapPointState.Travelable)
+            // Re-scan: must still be exactly one travelable
+            if (CountTravelable(__instance, out var target) != 1 || target == null)
+                return;
+            if (!GodotObject.IsInstanceValid(target))
                 return;
 
             __instance.OnMapPointSelectedLocally(target);
         };
+    }
+
+    private static int CountTravelable(NMapScreen screen, out NMapPoint? single)
+    {
+        single = null;
+        var pointsControl = Traverse.Create(screen).Field("_points").GetValue<Control>();
+        if (pointsControl == null)
+            return 0;
+
+        int count = 0;
+        CollectTravelable(pointsControl, ref count, ref single);
+        return count;
+    }
+
+    private static void CollectTravelable(Node parent, ref int count, ref NMapPoint? single)
+    {
+        foreach (var child in parent.GetChildren())
+        {
+            if (child is NMapPoint mapPoint && mapPoint.State == MapPointState.Travelable)
+            {
+                count++;
+                single = mapPoint;
+                if (count > 1)
+                    return;
+            }
+            else if (child.GetChildCount() > 0)
+            {
+                CollectTravelable(child, ref count, ref single);
+                if (count > 1)
+                    return;
+            }
+        }
     }
 }
