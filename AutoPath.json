@@ -1,0 +1,11 @@
+{
+  "id": "AutoPath",
+  "name": "AutoPath",
+  "author": "jadistanbelly",
+  "description": "Auto-advances on the map when only one path is available. No unnecessary clicks.",
+  "version": "1.0.0",
+  "has_pck": false,
+  "has_dll": true,
+  "dependencies": [],
+  "affects_gameplay": false
+}
