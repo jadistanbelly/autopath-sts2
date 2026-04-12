@@ -8,11 +8,18 @@
     <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
   </PropertyGroup>
 
+  <!-- Auto-detect STS2 install path per platform -->
   <PropertyGroup>
-    <STS2Path>$(HOME)/.local/share/Steam/steamapps/common/Slay the Spire 2</STS2Path>
-    <STS2DataPath>$(STS2Path)/data_sts2_linuxbsd_x86_64</STS2DataPath>
+    <STS2Path Condition="$([MSBuild]::IsOSPlatform('Linux'))">$(HOME)/.local/share/Steam/steamapps/common/Slay the Spire 2</STS2Path>
+    <STS2Path Condition="$([MSBuild]::IsOSPlatform('OSX'))">$(HOME)/Library/Application Support/Steam/steamapps/common/Slay the Spire 2</STS2Path>
+    <STS2Path Condition="$([MSBuild]::IsOSPlatform('Windows'))">C:/Program Files (x86)/Steam/steamapps/common/Slay the Spire 2</STS2Path>
+
+    <STS2DataPath Condition="$([MSBuild]::IsOSPlatform('Linux'))">$(STS2Path)/data_sts2_linuxbsd_x86_64</STS2DataPath>
+    <STS2DataPath Condition="$([MSBuild]::IsOSPlatform('OSX'))">$(STS2Path)/data_sts2_macos_universal</STS2DataPath>
+    <STS2DataPath Condition="$([MSBuild]::IsOSPlatform('Windows'))">$(STS2Path)/data_sts2_windows_x86_64</STS2DataPath>
   </PropertyGroup>
 
+  <!-- Allow override: dotnet build -p:STS2Path=/custom/path -->
   <ItemGroup>
     <Reference Include="sts2">
       <HintPath>$(STS2DataPath)/sts2.dll</HintPath>
