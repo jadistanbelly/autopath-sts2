@@ -54,7 +54,7 @@ public static class AutoPathConfig
             SetProp(delayEntry, "Min", 0.5f);
             SetProp(delayEntry, "Max", 10.0f);
             SetProp(delayEntry, "Step", 0.5f);
-            SetProp(delayEntry, "Format", "{0:0.0}s");
+            SetProp(delayEntry, "Format", "0.0");
             SetProp(delayEntry, "OnChanged", new Action<object>(OnDelayChanged));
 
             // Register both entries
