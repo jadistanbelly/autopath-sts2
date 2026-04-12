@@ -14,12 +14,11 @@ Auto-advances your character on the map when only one path is available. No more
 
 1. Download `AutoPath.dll` and `AutoPath.json` from [Releases](../../releases)
 2. Create a folder: `<STS2 install>/mods/AutoPath/`
-3. Place both files in that folder
-4. Launch STS2 → Settings → Mods → Enable **AutoPath**
+3. Place both files in that folder — AutoPath is active immediately on next launch
 
 ### Optional: ModConfig Integration
 
-Install the [ModConfig](https://www.nexusmods.com/slaytheSpire2/mods/56) mod to get an in-game settings panel for AutoPath with:
+Install the [ModConfig](https://www.nexusmods.com/slaythespire2/mods/27) mod to get an in-game settings panel for AutoPath with:
 - Selection Delay slider (0.5–10 seconds)
 - YOLO Mode toggle
 
