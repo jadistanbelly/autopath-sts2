@@ -7,7 +7,7 @@ Auto-advances your character on the map when only one path is available. No more
 - **Auto-advance** — when there's only one travelable node on the map, your character moves there automatically after a short delay
 - **YOLO Mode** — enable to auto-advance through ALL paths, picking randomly at forks (toggle in ModConfig settings)
 - **Configurable delay** — adjust the selection delay from 0.5s to 10s via ModConfig settings
-- **Multiplayer safe** — automatically disabled in co-op to avoid conflicts with the vote system
+- **Multiplayer compatible** — auto-votes for you in co-op; other players still need to agree
 - **Lightweight** — single Harmony patch, no performance impact
 
 ## Installation

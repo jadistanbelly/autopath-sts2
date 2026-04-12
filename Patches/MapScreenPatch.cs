@@ -4,7 +4,6 @@ using Godot;
 using HarmonyLib;
 using MegaCrit.Sts2.Core.Map;
 using MegaCrit.Sts2.Core.Nodes.Screens.Map;
-using MegaCrit.Sts2.Core.Runs;
 
 namespace AutoPath.Patches;
 
@@ -21,10 +20,6 @@ public static class MapScreenPatch
             return;
 
         if (__instance.IsTraveling || !__instance.IsTravelEnabled)
-            return;
-
-        var runManager = RunManager.Instance;
-        if (runManager != null && !runManager.IsSinglePlayerOrFakeMultiplayer)
             return;
 
         var travelable = CollectTravelable(__instance);
