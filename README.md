@@ -34,17 +34,23 @@ Without ModConfig, AutoPath works with default settings (0.5s delay, YOLO off).
 git clone https://github.com/jadistanbelly/autopath-sts2.git
 cd autopath-sts2
 
-# Build and deploy to your STS2 mods folder (auto-detects OS)
+# Linux / macOS — build and deploy (auto-detects OS)
 ./build-and-deploy.sh
+
+# Windows (PowerShell)
+.\build-and-deploy.ps1
 ```
 
-The build auto-detects your platform (Linux, macOS, Windows) and STS2 install location. If Steam is installed in a non-default location, override with:
+The build auto-detects your platform and STS2 install location. If Steam is installed in a non-default location, override with:
 
 ```bash
-# Custom Steam path
+# Linux/macOS — custom Steam path
 STS2_MODS="/path/to/STS2/mods" ./build-and-deploy.sh
 
-# Or override in the build directly
+# Windows PowerShell — custom Steam path
+$env:STS2_MODS="D:\Steam\steamapps\common\Slay the Spire 2\mods"; .\build-and-deploy.ps1
+
+# Or override in the build directly (any OS)
 dotnet build -c Release -p:STS2Path="/path/to/Slay the Spire 2"
 ```
 
