@@ -11,11 +11,15 @@ public static class AutoPathConfig
 {
     private const string ModId = "AutoPath";
     private const string YoloKey = "yolo_mode";
+    private const string DelayKey = "selection_delay";
+    private const float DefaultDelay = 0.5f;
 
     public static bool YoloMode { get; private set; }
+    public static float SelectionDelay { get; private set; } = DefaultDelay;
 
     private static Type? _apiType;
     private static MethodInfo? _getValueBool;
+    private static MethodInfo? _getValueDouble;
     private static bool _registered;
 
     public static void TryRegisterWithModConfig()
@@ -31,27 +35,41 @@ public static class AutoPathConfig
             if (configEntryType == null || configTypeEnum == null)
                 return;
 
-            // Build ConfigEntry for YOLO toggle
-            var entry = Activator.CreateInstance(configEntryType)!;
-            SetProp(entry, "Key", YoloKey);
-            SetProp(entry, "Label", "YOLO Mode");
-            SetProp(entry, "Description", "Auto-advance even when multiple paths are available (random choice)");
-            SetProp(entry, "Type", Enum.Parse(configTypeEnum, "Toggle"));
-            SetProp(entry, "DefaultValue", false);
-            SetProp(entry, "OnChanged", new Action<object>(OnYoloChanged));
+            // YOLO toggle entry
+            var yoloEntry = Activator.CreateInstance(configEntryType)!;
+            SetProp(yoloEntry, "Key", YoloKey);
+            SetProp(yoloEntry, "Label", "YOLO Mode");
+            SetProp(yoloEntry, "Description", "Auto-advance even when multiple paths are available (random choice)");
+            SetProp(yoloEntry, "Type", Enum.Parse(configTypeEnum, "Toggle"));
+            SetProp(yoloEntry, "DefaultValue", false);
+            SetProp(yoloEntry, "OnChanged", new Action<object>(OnYoloChanged));
 
-            // Create ConfigEntry[] { entry }
-            var entriesArray = Array.CreateInstance(configEntryType, 1);
-            entriesArray.SetValue(entry, 0);
+            // Delay slider entry
+            var delayEntry = Activator.CreateInstance(configEntryType)!;
+            SetProp(delayEntry, "Key", DelayKey);
+            SetProp(delayEntry, "Label", "Selection Delay");
+            SetProp(delayEntry, "Description", "Seconds to wait before auto-advancing (0.5 – 10)");
+            SetProp(delayEntry, "Type", Enum.Parse(configTypeEnum, "Slider"));
+            SetProp(delayEntry, "DefaultValue", (double)DefaultDelay);
+            SetProp(delayEntry, "Min", 0.5f);
+            SetProp(delayEntry, "Max", 10.0f);
+            SetProp(delayEntry, "Step", 0.5f);
+            SetProp(delayEntry, "Format", "{0:0.0}s");
+            SetProp(delayEntry, "OnChanged", new Action<object>(OnDelayChanged));
 
-            // Call ModConfigApi.Register(modId, displayName, entries)
+            // Register both entries
+            var entriesArray = Array.CreateInstance(configEntryType, 2);
+            entriesArray.SetValue(delayEntry, 0);
+            entriesArray.SetValue(yoloEntry, 1);
+
             var registerMethod = _apiType.GetMethod("Register",
                 new[] { typeof(string), typeof(string), entriesArray.GetType() });
             registerMethod?.Invoke(null, new object[] { ModId, "AutoPath", entriesArray });
 
-            // Cache GetValue<bool>
+            // Cache typed GetValue methods
             var getValueGeneric = _apiType.GetMethod("GetValue");
             _getValueBool = getValueGeneric?.MakeGenericMethod(typeof(bool));
+            _getValueDouble = getValueGeneric?.MakeGenericMethod(typeof(double));
 
             _registered = true;
             RefreshValues();
@@ -64,16 +82,20 @@ public static class AutoPathConfig
 
     public static void RefreshValues()
     {
-        if (!_registered || _getValueBool == null)
+        if (!_registered)
             return;
 
         try
         {
-            YoloMode = (bool)_getValueBool.Invoke(null, new object[] { ModId, YoloKey })!;
+            if (_getValueBool != null)
+                YoloMode = (bool)_getValueBool.Invoke(null, new object[] { ModId, YoloKey })!;
+            if (_getValueDouble != null)
+                SelectionDelay = (float)(double)_getValueDouble.Invoke(null, new object[] { ModId, DelayKey })!;
         }
         catch
         {
             YoloMode = false;
+            SelectionDelay = DefaultDelay;
         }
     }
 
@@ -81,6 +103,12 @@ public static class AutoPathConfig
     {
         if (newValue is bool b)
             YoloMode = b;
+    }
+
+    private static void OnDelayChanged(object newValue)
+    {
+        if (newValue is double d)
+            SelectionDelay = (float)d;
     }
 
     private static Type? FindModConfigApi()

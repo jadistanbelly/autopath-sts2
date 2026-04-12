@@ -45,7 +45,7 @@ public static class MapScreenPatch
             return;
         }
 
-        tree.CreateTimer(0.5).Timeout += () =>
+        tree.CreateTimer(AutoPathConfig.SelectionDelay).Timeout += () =>
         {
             _pendingScreen = null;
 
