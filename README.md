@@ -55,11 +55,17 @@ dotnet build -c Release -p:STS2Path="/path/to/Slay the Spire 2"
 
 ## How It Works
 
-AutoPath uses [Harmony](https://github.com/pardeike/Harmony) to patch `NMapScreen.RecalculateTravelability`. After the game recalculates which map nodes are travelable, AutoPath counts them:
+AutoPath uses [Harmony](https://github.com/pardeike/Harmony) to hook into the map screen. After the game recalculates which map nodes are travelable, AutoPath counts them:
 
 - **1 travelable node** → auto-select after the configured delay
 - **Multiple nodes** → do nothing (unless YOLO mode is on, then pick randomly)
 - **0 nodes** → do nothing
+
+It also detects when you're peeking at the map (e.g. during rewards) and won't auto-advance until you're back to normal map navigation.
+
+## About
+
+This mod was vibe-coded and designed purely for fun. Built with AI assistance — expect rough edges and chaotic energy.
 
 ## License
 

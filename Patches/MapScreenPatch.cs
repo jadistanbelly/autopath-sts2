@@ -4,23 +4,19 @@ using Godot;
 using HarmonyLib;
 using MegaCrit.Sts2.Core.Map;
 using MegaCrit.Sts2.Core.Nodes.Screens.Map;
-using MegaCrit.Sts2.Core.Rooms;
 
 namespace AutoPath.Patches;
 
-/// <summary>
-/// Primary hook: fires after the game recalculates which map nodes are travelable.
-/// </summary>
 [HarmonyPatch(typeof(NMapScreen), "RecalculateTravelability")]
 public static class MapScreenPatch
 {
     [HarmonyPostfix]
-    public static void Postfix(NMapScreen __instance) => AutoAdvanceScheduler.TrySchedule(__instance);
+    public static void Postfix(NMapScreen __instance)
+    {
+        AutoAdvanceScheduler.TrySchedule(__instance);
+    }
 }
 
-/// <summary>
-/// Secondary hook: fires when travel becomes enabled on the map (catches act start).
-/// </summary>
 [HarmonyPatch(typeof(NMapScreen), nameof(NMapScreen.SetTravelEnabled))]
 public static class TravelEnabledPatch
 {
@@ -32,53 +28,84 @@ public static class TravelEnabledPatch
     }
 }
 
-/// <summary>
-/// Shared auto-advance logic used by all hooks.
-/// Uses a generation counter to safely handle overlapping timers from multiple hooks.
-/// </summary>
+[HarmonyPatch(typeof(NMapScreen), nameof(NMapScreen.Open))]
+public static class MapOpenPatch
+{
+    [HarmonyPostfix]
+    public static void Postfix(bool isOpenedFromTopBar)
+    {
+        AutoAdvanceScheduler.SetPeeking(isOpenedFromTopBar);
+    }
+}
+
 public static class AutoAdvanceScheduler
 {
-    private static int _pendingGeneration;
+    private static NMapScreen? _pendingScreen;
+    private static bool _isPeeking;
     private static readonly Random Rng = new();
+
+    public static void SetPeeking(bool peeking)
+    {
+        _isPeeking = peeking;
+    }
 
     public static void TrySchedule(NMapScreen screen)
     {
-        if (screen.IsTraveling || !screen.IsTravelEnabled)
+        if (_pendingScreen == screen)
+            return;
+        if (screen.IsTraveling)
+            return;
+        if (!screen.IsTravelEnabled)
             return;
 
         var travelable = CollectTravelable(screen);
+
         if (travelable.Count == 0)
             return;
-
         if (travelable.Count > 1 && !AutoPathConfig.YoloMode)
             return;
 
-        // Bump generation to invalidate any previously scheduled timer
-        var generation = ++_pendingGeneration;
+        _pendingScreen = screen;
+        GD.Print($"[AutoPath] Scheduling auto-advance ({AutoPathConfig.SelectionDelay}s, {travelable.Count} node(s))");
 
         var tree = screen.GetTree();
         if (tree == null)
+        {
+            _pendingScreen = null;
             return;
+        }
 
         tree.CreateTimer(AutoPathConfig.SelectionDelay).Timeout += () =>
-            OnTimerFired(screen, generation);
+            OnTimerFired(screen);
     }
 
-    private static void OnTimerFired(NMapScreen screen, int generation)
+    private static void OnTimerFired(NMapScreen screen)
     {
-        // Stale timer — a newer schedule superseded this one
-        if (generation != _pendingGeneration)
-            return;
+        _pendingScreen = null;
 
         if (!GodotObject.IsInstanceValid(screen))
             return;
-        if (!screen.IsInsideTree() || !screen.IsOpen)
+        if (!screen.IsInsideTree())
             return;
-        if (screen.IsTraveling || !screen.IsTravelEnabled)
+        if (!screen.IsOpen)
+            return;
+        if (screen.IsTraveling)
+            return;
+        if (!screen.IsTravelEnabled)
             return;
 
-        if (!IsMapActive())
+        // Map opened from top bar (peeking during rewards/room) — retry until
+        // the game transitions to normal map view via Open(false)
+        if (_isPeeking)
+        {
+            GD.Print("[AutoPath] Peeking — will retry");
+            _pendingScreen = screen;
+            var retryTree = screen.GetTree();
+            if (retryTree != null)
+                retryTree.CreateTimer(AutoPathConfig.SelectionDelay).Timeout += () =>
+                    OnTimerFired(screen);
             return;
+        }
 
         var fresh = CollectTravelable(screen);
         if (fresh.Count == 0)
@@ -93,59 +120,8 @@ public static class AutoAdvanceScheduler
         if (!GodotObject.IsInstanceValid(target))
             return;
 
+        GD.Print("[AutoPath] Auto-advancing to next node");
         screen.OnMapPointSelectedLocally(target);
-    }
-
-    /// <summary>
-    /// Returns true only when the player is on the map with no overlays blocking it.
-    /// Prevents auto-advancing while in a shop, event, rewards screen, etc.
-    /// </summary>
-    private static bool IsMapActive()
-    {
-        try
-        {
-            // Guard 1: No overlay screens (shop inventory, event choices, rewards, etc.)
-            var overlayStack = Traverse.Create(typeof(MegaCrit.Sts2.Core.Nodes.Screens.Overlays.NOverlayStack))
-                .Property("Instance").GetValue();
-            if (overlayStack != null)
-            {
-                var screenCount = Traverse.Create(overlayStack).Property("ScreenCount").GetValue<int>();
-                if (screenCount > 0)
-                    return false;
-            }
-        }
-        catch
-        {
-            // NOverlayStack unavailable — fail closed
-            return false;
-        }
-
-        try
-        {
-            // Guard 2: Current room is the map (not shop, event, combat, etc.)
-            var runManager = Traverse.Create(typeof(MegaCrit.Sts2.Core.Runs.RunManager))
-                .Property("Instance").GetValue();
-            if (runManager == null)
-                return false;
-
-            var state = Traverse.Create(runManager).Property("State").GetValue();
-            if (state == null)
-                return false;
-
-            var currentRoom = Traverse.Create(state).Property("CurrentRoom").GetValue<AbstractRoom>();
-            if (currentRoom == null)
-                return false;
-
-            if (currentRoom.RoomType != RoomType.Map)
-                return false;
-        }
-        catch
-        {
-            // RunManager state unavailable — fail closed
-            return false;
-        }
-
-        return true;
     }
 
     private static List<NMapPoint> CollectTravelable(NMapScreen screen)
