@@ -1,7 +1,8 @@
 $ErrorActionPreference = "Stop"
 
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
-Set-Location $ScriptDir
+$ProjectDir = Split-Path -Parent $ScriptDir
+Set-Location $ProjectDir
 
 $ModName = "AutoPath"
 
