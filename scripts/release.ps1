@@ -51,9 +51,17 @@ Write-Host "=== Tagging $Tag ==="
 git tag -a $Tag -m "Release $Tag"
 git push origin $Tag
 
+# Build release notes from commits since last tag
+$PrevTag = git describe --tags --abbrev=0 "HEAD^" 2>$null
+if ($PrevTag) {
+    $Notes = git --no-pager log --pretty=format:"- %s" "$PrevTag..HEAD" --no-merges
+} else {
+    $Notes = git --no-pager log --pretty=format:"- %s" --no-merges
+}
+
 # Create GitHub Release with the zip attached
 Write-Host "=== Creating GitHub Release ==="
-gh release create $Tag $Zip --title "$ModName $Tag" --generate-notes
+gh release create $Tag $Zip --title "$ModName $Tag" --notes ($Notes -join "`n")
 
 $RepoUrl = gh repo view --json url -q ".url"
 Write-Host ""

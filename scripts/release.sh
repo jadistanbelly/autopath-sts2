@@ -48,11 +48,19 @@ echo "=== Tagging $TAG ==="
 git tag -a "$TAG" -m "Release $TAG"
 git push origin "$TAG"
 
+# Build release notes from commits since last tag
+PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+if [[ -n "$PREV_TAG" ]]; then
+    NOTES=$(git --no-pager log --pretty=format:"- %s" "$PREV_TAG..HEAD" --no-merges)
+else
+    NOTES=$(git --no-pager log --pretty=format:"- %s" --no-merges)
+fi
+
 # Create GitHub Release with the zip attached
 echo "=== Creating GitHub Release ==="
 gh release create "$TAG" "$ZIP" \
     --title "$MOD_NAME $TAG" \
-    --generate-notes
+    --notes "$NOTES"
 
 REPO_URL=$(gh repo view --json url -q .url)
 echo ""
