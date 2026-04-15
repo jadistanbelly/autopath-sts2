@@ -12,9 +12,9 @@ Auto-advances your character on the map when only one path is available. No more
 
 ## Installation
 
-1. Download `AutoPath.dll` and `AutoPath.json` from [Releases](../../releases)
-2. Create a folder: `<STS2 install>/mods/AutoPath/`
-3. Place both files in that folder — AutoPath is active immediately on next launch
+1. Download `AutoPath.zip` from [Releases](../../releases)
+2. Extract into `<STS2 install>/mods/` — this creates a `mods/AutoPath/` folder with everything inside
+3. Launch STS2 and enable AutoPath in the mod menu
 
 ### Optional: ModConfig Integration
 
@@ -34,24 +34,48 @@ git clone https://github.com/jadistanbelly/autopath-sts2.git
 cd autopath-sts2
 
 # Linux / macOS — build and deploy (auto-detects OS)
-./build-and-deploy.sh
+./scripts/build-and-deploy.sh
 
 # Windows (PowerShell)
-.\build-and-deploy.ps1
+.\scripts\build-and-deploy.ps1
+```
+
+Release builds also produce `bin/Release/AutoPath.zip` ready for distribution:
+
+```bash
+dotnet build -c Release
 ```
 
 The build auto-detects your platform and STS2 install location. If Steam is installed in a non-default location, override with:
 
 ```bash
 # Linux/macOS — custom Steam path
-STS2_MODS="/path/to/STS2/mods" ./build-and-deploy.sh
+STS2_MODS="/path/to/STS2/mods" ./scripts/build-and-deploy.sh
 
 # Windows PowerShell — custom Steam path
-$env:STS2_MODS="D:\Steam\steamapps\common\Slay the Spire 2\mods"; .\build-and-deploy.ps1
+$env:STS2_MODS="D:\Steam\steamapps\common\Slay the Spire 2\mods"; .\scripts\build-and-deploy.ps1
 
 # Or override in the build directly (any OS)
 dotnet build -c Release -p:STS2Path="/path/to/Slay the Spire 2"
 ```
+
+## Releasing
+
+The release scripts automate the full flow: build → zip → git tag → GitHub Release.
+
+```bash
+# 1. Update the version in AutoPath.json
+# 2. Commit your changes
+# 3. Run the release script:
+
+# Linux / macOS
+./scripts/release.sh
+
+# Windows (PowerShell)
+.\scripts\release.ps1
+```
+
+**Requirements:** [GitHub CLI](https://cli.github.com) (`gh`) installed and authenticated.
 
 ## How It Works
 

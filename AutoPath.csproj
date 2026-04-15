@@ -34,4 +34,21 @@
       <Private>false</Private>
     </Reference>
   </ItemGroup>
+
+  <!-- Package release zip: dotnet build -c Release → bin/Release/AutoPath.zip -->
+  <Target Name="PackageRelease" AfterTargets="Build" Condition="'$(Configuration)' == 'Release'">
+    <PropertyGroup>
+      <_PackageStaging>$(OutputPath)package/AutoPath</_PackageStaging>
+      <_ZipFile>$(OutputPath)AutoPath.zip</_ZipFile>
+    </PropertyGroup>
+
+    <RemoveDir Directories="$(OutputPath)package" />
+    <MakeDir Directories="$(_PackageStaging)" />
+    <Copy SourceFiles="$(OutputPath)AutoPath.dll" DestinationFolder="$(_PackageStaging)" />
+    <Copy SourceFiles="$(MSBuildProjectDirectory)/AutoPath.json" DestinationFolder="$(_PackageStaging)" />
+    <ZipDirectory SourceDirectory="$(OutputPath)package" DestinationFile="$(_ZipFile)" Overwrite="true" />
+    <RemoveDir Directories="$(OutputPath)package" />
+
+    <Message Text="📦 Created release package: $(_ZipFile)" Importance="high" />
+  </Target>
 </Project>
