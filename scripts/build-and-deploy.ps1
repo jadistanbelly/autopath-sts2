@@ -1,6 +1,7 @@
 $ErrorActionPreference = "Stop"
 
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+$ProjectDir = Split-Path -Parent $ScriptDir
 $ModName = "AutoPath"
 $STS2Mods = if ($env:STS2_MODS) {
     $env:STS2_MODS
@@ -10,7 +11,7 @@ $STS2Mods = if ($env:STS2_MODS) {
 $DeployDir = Join-Path $STS2Mods $ModName
 
 Write-Host "=== Building $ModName ==="
-Set-Location $ScriptDir
+Set-Location $ProjectDir
 dotnet build -c Release --nologo -v quiet
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
