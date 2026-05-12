@@ -8,7 +8,7 @@ Auto-advances your character on the map when only one path is available. No more
 - **YOLO Mode** — enable to auto-advance through ALL paths, picking randomly at forks (toggle in ModConfig settings)
 - **Configurable delay** — adjust the selection delay from 0.5s to 10s via ModConfig settings
 - **Multiplayer compatible** — auto-votes for you in co-op; other players still need to agree
-- **Lightweight** — single Harmony patch, no performance impact
+- **Lightweight** — small Harmony patches, no performance impact
 
 ## Installation
 
@@ -61,21 +61,42 @@ dotnet build -c Release -p:STS2Path="/path/to/Slay the Spire 2"
 
 ## Releasing
 
-The release scripts automate the full flow: build → zip → git tag → GitHub Release.
+GitHub-hosted runners do not have the STS2 game assemblies required to compile mods, so releases are built locally on a machine with STS2 installed. The release helper is reusable across STS2 mod repos and reads `.sts2-release.env` for per-mod settings.
 
 ```bash
-# 1. Update the version in AutoPath.json
-# 2. Commit your changes
-# 3. Run the release script:
+# Bump 1.3.2 -> 1.3.3
+./scripts/release.sh patch
 
-# Linux / macOS
-./scripts/release.sh
+# Bump 1.3.2 -> 1.4.0
+./scripts/release.sh minor
 
-# Windows (PowerShell)
-.\scripts\release.ps1
+# Bump 1.3.2 -> 2.0.0
+./scripts/release.sh major
 ```
 
-**Requirements:** [GitHub CLI](https://cli.github.com) (`gh`) installed and authenticated.
+The script updates `AutoPath.json`, builds and packages `bin/Release/AutoPath.zip`, commits `chore(release): vX.Y.Z`, tags `vX.Y.Z`, pushes the branch and tag, and creates the GitHub Release.
+
+**Requirements:** STS2 installed locally, [GitHub CLI](https://cli.github.com) (`gh`) installed and authenticated, and a clean git working tree.
+
+### Reusing the release script for other STS2 mods
+
+Copy `scripts/release-sts2-mod.sh` into the mod repo and add a `.sts2-release.env` file:
+
+```bash
+MOD_MANIFEST="MyMod.json"
+PROJECT_FILE="MyMod.csproj"
+ASSEMBLY_NAME="MyMod"
+```
+
+Optional settings:
+
+```bash
+BUILD_CONFIGURATION="Release"
+OUTPUT_DIR="bin/Release"
+RELEASE_ASSET_PATH="bin/Release/MyMod.zip"
+PACKAGE_EXTRA_FILES=("MyMod.pck" "assets")
+BUILD_COMMAND=(dotnet build "MyMod.csproj" -c Release --nologo)
+```
 
 ## How It Works
 
