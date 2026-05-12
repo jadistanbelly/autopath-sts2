@@ -4,6 +4,7 @@ using Godot;
 using HarmonyLib;
 using MegaCrit.Sts2.Core.Map;
 using MegaCrit.Sts2.Core.Nodes.Screens.Map;
+using MegaCrit.Sts2.Core.Runs;
 
 namespace AutoPath.Patches;
 
@@ -38,10 +39,23 @@ public static class MapOpenPatch
     }
 }
 
+[HarmonyPatch(typeof(NMapScreen), nameof(NMapScreen.Close))]
+public static class MapClosePatch
+{
+    [HarmonyPostfix]
+    public static void Postfix(NMapScreen __instance)
+    {
+        AutoAdvanceScheduler.CancelPending(__instance);
+    }
+}
+
 public static class AutoAdvanceScheduler
 {
-    private static NMapScreen? _pendingScreen;
+    private readonly record struct PendingAutoAdvance(NMapScreen Screen, int Generation, MapLocation Location);
+
+    private static PendingAutoAdvance? _pending;
     private static bool _isPeeking;
+    private static int _pendingGeneration;
     private static readonly Random Rng = new();
 
     public static void SetPeeking(bool peeking)
@@ -49,9 +63,18 @@ public static class AutoAdvanceScheduler
         _isPeeking = peeking;
     }
 
+    public static void CancelPending(NMapScreen screen)
+    {
+        if (_pending?.Screen == screen)
+            _pending = null;
+
+        _pendingGeneration++;
+        _isPeeking = false;
+    }
+
     public static void TrySchedule(NMapScreen screen)
     {
-        if (_pendingScreen == screen)
+        if (_pending?.Screen == screen)
             return;
         if (screen.IsTraveling)
             return;
@@ -65,24 +88,34 @@ public static class AutoAdvanceScheduler
         if (travelable.Count > 1 && !AutoPathConfig.YoloMode)
             return;
 
-        _pendingScreen = screen;
+        var scheduledLocation = GetCurrentMapLocation();
+        if (!scheduledLocation.HasValue)
+            return;
+
+        var generation = ++_pendingGeneration;
+        var pending = new PendingAutoAdvance(screen, generation, scheduledLocation.Value);
+        _pending = pending;
         GD.Print($"[AutoPath] Scheduling auto-advance ({AutoPathConfig.SelectionDelay}s, {travelable.Count} node(s))");
 
         var tree = screen.GetTree();
         if (tree == null)
         {
-            _pendingScreen = null;
+            _pending = null;
             return;
         }
 
         tree.CreateTimer(AutoPathConfig.SelectionDelay).Timeout += () =>
-            OnTimerFired(screen);
+            OnTimerFired(pending);
     }
 
-    private static void OnTimerFired(NMapScreen screen)
+    private static void OnTimerFired(PendingAutoAdvance pending)
     {
-        _pendingScreen = null;
+        if (!IsPendingCurrent(pending))
+            return;
 
+        _pending = null;
+
+        var screen = pending.Screen;
         if (!GodotObject.IsInstanceValid(screen))
             return;
         if (!screen.IsInsideTree())
@@ -99,11 +132,11 @@ public static class AutoAdvanceScheduler
         if (_isPeeking)
         {
             GD.Print("[AutoPath] Peeking — will retry");
-            _pendingScreen = screen;
+            _pending = pending;
             var retryTree = screen.GetTree();
             if (retryTree != null)
                 retryTree.CreateTimer(AutoPathConfig.SelectionDelay).Timeout += () =>
-                    OnTimerFired(screen);
+                    OnTimerFired(pending);
             return;
         }
 
@@ -111,6 +144,8 @@ public static class AutoAdvanceScheduler
         if (fresh.Count == 0)
             return;
         if (fresh.Count > 1 && !AutoPathConfig.YoloMode)
+            return;
+        if (!IsPendingCurrent(pending))
             return;
 
         var target = fresh.Count == 1
@@ -121,7 +156,33 @@ public static class AutoAdvanceScheduler
             return;
 
         GD.Print("[AutoPath] Auto-advancing to next node");
+        // Selection queues travel asynchronously; keep schedules suppressed until close.
+        _pending = pending;
+        _pendingGeneration++;
         screen.OnMapPointSelectedLocally(target);
+    }
+
+    private static MapLocation? GetCurrentMapLocation()
+    {
+        try
+        {
+            return RunManager.Instance.DebugOnlyGetState()?.MapLocation;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private static bool IsPendingCurrent(PendingAutoAdvance pending)
+    {
+        return pending.Generation == _pendingGeneration && IsCurrentMapLocation(pending.Location);
+    }
+
+    private static bool IsCurrentMapLocation(MapLocation scheduledLocation)
+    {
+        var currentLocation = GetCurrentMapLocation();
+        return currentLocation.HasValue && currentLocation.Value == scheduledLocation;
     }
 
     private static List<NMapPoint> CollectTravelable(NMapScreen screen)
