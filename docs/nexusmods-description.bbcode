@@ -4,28 +4,28 @@ Auto-advances your character on the map when only one path is available. No more
 
 [size=3][b]Features[/b][/size]
 [list]
-[*][b]Auto-advance[/b] — when there's only one travelable node, your character moves there automatically after a short delay
-[*][b]YOLO Mode[/b] — auto-advance through ALL paths, picking randomly at forks
-[*][b]Configurable delay[/b] — adjust from 0.5s to 10s
-[*][b]Multiplayer compatible[/b] — auto-votes for you in co-op; other players still need to agree
-[*][b]Lightweight[/b] — single Harmony patch, zero performance impact
+[*][b]Auto-advance[/b] - when there's only one travelable node, your character moves there automatically after a short delay
+[*][b]Fork safety[/b] - waits for your input when multiple paths are available
+[*][b]YOLO Mode[/b] - optionally picks a random path at forks
+[*][b]Configurable delay[/b] - adjust from 0.5s to 10s
+[*][b]Multiplayer compatible[/b] - auto-votes for you in co-op; other players still need to agree
 [/list]
 
 [size=3][b]Installation[/b][/size]
 [list=1]
-[*]Download AutoPath.dll and AutoPath.json from the Files tab
-[*]Create a folder: [font=Courier]Slay the Spire 2/mods/AutoPath/[/font]
-[*]Place both files in that folder
-[*]Launch STS2 → Settings → Mods → Enable AutoPath
+[*]Download AutoPath.zip from the Files tab
+[*]Extract it into your [font=Courier]Slay the Spire 2/mods/[/font] folder
+[*]The final layout should be [font=Courier]mods/AutoPath/AutoPath.dll[/font] and [font=Courier]mods/AutoPath/AutoPath.json[/font]
+[*]Launch STS2, open the mod menu, and enable AutoPath
 [/list]
 
 [size=3][b]Settings (requires ModConfig)[/b][/size]
-Install [url=https://www.nexusmods.com/slaytheSpire2/mods/56]ModConfig[/url] to get an in-game settings panel:
+Install [url=https://www.nexusmods.com/slaythespire2/mods/27]ModConfig[/url] to get an in-game settings panel:
 [list]
-[*][b]Selection Delay (sec)[/b] — slider from 0.5 to 10 seconds (default: 0.5)
-[*][b]YOLO Mode[/b] — toggle to auto-advance even when multiple paths exist (picks randomly)
+[*][b]Selection Delay (sec)[/b] - slider from 0.5 to 10 seconds (default: 0.5)
+[*][b]YOLO Mode[/b] - toggle to auto-advance even when multiple paths exist (picks randomly)
 [/list]
 Without ModConfig, AutoPath works with defaults (0.5s delay, YOLO off).
 
 [size=3][b]Source Code[/b][/size]
-[url=https://github.com/jadistanbelly/autopath-sts2]GitHub — autopath-sts2[/url] (Unlicense / Public Domain)
+[url=https://github.com/jadistanbelly/autopath-sts2]GitHub - autopath-sts2[/url] (Unlicense / Public Domain)
