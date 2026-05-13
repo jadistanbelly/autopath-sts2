@@ -33,6 +33,14 @@ Install [ModConfig](https://www.nexusmods.com/slaythespire2/mods/27) to change s
 - When the map is opened from the top bar during rewards or events, AutoPath waits until normal map navigation resumes.
 - In multiplayer, AutoPath submits your vote only. It does not force other players to choose.
 
+## Compatibility
+
+AutoPath only interacts with the STS2 map screen and does not require other mods.
+
+- [ModConfig](https://www.nexusmods.com/slaythespire2/mods/27) is optional and only provides the settings menu.
+- SpeedX is not required. AutoPath includes a defensive cleanup for delayed proceed-button automation so SpeedX-style auto-proceed behavior does not reopen the map after AutoPath has selected a node.
+- If another mod changes map navigation, proceed buttons, or room transitions, include your mod list when reporting issues.
+
 ## Building from Source
 
 Requirements:

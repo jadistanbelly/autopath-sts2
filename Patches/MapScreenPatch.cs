@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using Godot;
 using HarmonyLib;
+using MegaCrit.Sts2.Core.Nodes;
+using MegaCrit.Sts2.Core.Nodes.Rooms;
 using MegaCrit.Sts2.Core.Map;
 using MegaCrit.Sts2.Core.Nodes.Screens.Map;
 using MegaCrit.Sts2.Core.Runs;
@@ -159,7 +161,27 @@ public static class AutoAdvanceScheduler
         // Selection queues travel asynchronously; keep schedules suppressed until close.
         _pending = pending;
         _pendingGeneration++;
+        DisableCurrentRoomProceedButton();
         screen.OnMapPointSelectedLocally(target);
+    }
+
+    private static void DisableCurrentRoomProceedButton()
+    {
+        try
+        {
+            var run = NRun.Instance;
+            var currentRoom = run?.CombatRoom as IRoomWithProceedButton
+                ?? run?.TreasureRoom as IRoomWithProceedButton
+                ?? run?.RestSiteRoom as IRoomWithProceedButton
+                ?? run?.MerchantRoom as IRoomWithProceedButton;
+            var proceedButton = currentRoom?.ProceedButton;
+            if (proceedButton != null && GodotObject.IsInstanceValid(proceedButton))
+                proceedButton.Disable();
+        }
+        catch
+        {
+            // The map vote is the important action; never block travel for UI cleanup.
+        }
     }
 
     private static MapLocation? GetCurrentMapLocation()
